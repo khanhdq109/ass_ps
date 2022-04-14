@@ -51,6 +51,12 @@ vis <- function(dep_delay, carrier) {
           main = "Plot")
 }
 
+anova <- function(fact, value) {
+  fact <- as.factor(fact)
+  analysis <- aov(value ~ fact)
+  summary(analysis)
+}
+
 # 1/ Doc du lieu:
 setwd("D:/Khanh/BK/HK212/XSTK/Code")
 load(file = "flights.rda")
@@ -104,6 +110,7 @@ vis(dep_delay, carrier)
 
 
 # 4/ ANOVA mot nhan to:
+anova(carrier, dep_delay)
 
 
 # 5/ Mo hinh hoi quy tuyen tinh:
