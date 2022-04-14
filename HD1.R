@@ -5,6 +5,52 @@ library("moments")
 library("readr")
 library("rlist")
 
+
+# Mot so dinh nghia ham:
+vis <- function(dep_delay, carrier) {
+  lengthc <- tapply(dep_delay, carrier, length)
+  cat("Kich thuoc mau o cac hang hang khong:\n")
+  print(lengthc, quote = TRUE, row.names = FALSE)
+  
+  meanc <- tapply(dep_delay, carrier, mean)
+  cat("Trung binh mau o cac hang hang khong:\n")
+  print(meanc, quote = TRUE, row.names = FALSE)
+  
+  sdc <- tapply(dep_delay, carrier, sd)
+  vari <- sdc * sdc
+  cat("Phuong sai mau o cac hang hang khong:\n")
+  print(vari, quote = TRUE, row.names = FALSE)
+  
+  varc <- vari * lengthc / (lengthc - 1)
+  cat("Phuong sai mau hieu chinh o cac hang hang khong:\n")
+  print(varc, quote = TRUE, row.names = FALSE)
+  
+  minc <- tapply(dep_delay, carrier, min)
+  cat("Gia tri nho nhat o cac hang hang khong:\n")
+  print(minc, quote = TRUE, row.names = FALSE)
+  
+  maxc <- tapply(dep_delay, carrier, max)
+  cat("Gia tri lon nhat o cac hang hang khong:\n")
+  print(maxc, quote = TRUE, row.names = FALSE)
+  
+  Q1 <- tapply(dep_delay, carrier, quantile, probs = 0.25)
+  cat("Phan vi 1 o cac hang hang khong:\n")
+  print(Q1, quote = TRUE, row.names = FALSE)
+  
+  Q2 <- tapply(dep_delay, carrier, quantile, probs = 0.5)
+  cat("Phan vi 2 o cac hang hang khong:\n")
+  print(Q2, quote = TRUE, row.names = FALSE)
+  
+  Q3 <- tapply(dep_delay, carrier, quantile, probs = 0.75)
+  cat("Phan vi 3 o cac hang hang khong:\n")
+  print(Q3, quote = TRUE, row.names = FALSE)
+  
+  boxplot(dep_delay ~ carrier,
+          xlab = "Carrier",
+          ylab = "Dep_delay",
+          main = "Plot")
+}
+
 # 1/ Doc du lieu:
 setwd("D:/Khanh/BK/HK212/XSTK/Code")
 load(file = "flights.rda")
@@ -32,47 +78,29 @@ arr_delay<-flights$arr_delay
 distance<-flights$distance
 
 # Thong ke mo ta:
-length <- tapply(dep_delay, carrier, length)
-cat("Kich thuoc mau o cac hang hang khong:\n")
-length
+vis(dep_delay, carrier)
 
-mean <- tapply(dep_delay, carrier, mean)
-cat("Trung binh mau o cac hang hang khong:\n")
-mean
+# Loai bo cac outlier:
+meanc <- tapply(dep_delay, carrier, mean)
+temp <- carrier[!duplicated(carrier)]
+for (i in c(1:length(temp))) {
+  idx <- which(carrier == temp[i])
+  Q <- quantile(dep_delay[idx], probs = c(.25, .75), na.rm = FALSE)
+  iqr <- IQR(dep_delay[idx], na.rm = FALSE)
+  upper <- Q[[2]] + 1.5 * iqr
+  lower <- Q[[1]] - 1.5 * iqr
+  for (j in c(1:length(idx))) {
+    if (flights$dep_delay[idx[j]] < lower || flights$dep_delay[idx[j]] > upper) {
+      flights$dep_delay[idx[j]] <- meanc[[temp[i]]]
+    }
+  }
+}
 
-sd <- tapply(dep_delay, carrier, sd)
-vari <- sd * sd
-cat("Phuong sai mau o cac hang hang khong:\n")
-vari
+# Cap nhat bien:
+dep_delay<-flights$dep_delay
 
-varc <- vari * length / (length - 1)
-cat("Phuong sai mau hieu chinh o cac hang hang khong:\n")
-varc
-
-minc <- tapply(dep_delay, carrier, min)
-cat("Gia tri nho nhat o cac hang hang khong:\n")
-minc
-
-maxc <- tapply(dep_delay, carrier, max)
-cat("Gia tri lon nhat o cac hang hang khong:\n")
-maxc
-
-Q1 <- tapply(dep_delay, carrier, quantile, probs = 0.25)
-cat("Phan vi 1 o cac hang hang khong:\n")
-Q1
-
-Q2 <- tapply(dep_delay, carrier, quantile, probs = 0.5)
-cat("Phan vi 2 o cac hang hang khong:\n")
-Q2
-
-Q3 <- tapply(dep_delay, carrier, quantile, probs = 0.75)
-cat("Phan vi 3 o cac hang hang khong:\n")
-Q3
-
-boxplot(flights$dep_delay ~ flights$carrier,
-        xlab = "Carrier",
-        ylab = "Dep_delay",
-        main = "Plot")
+# Thong ke mo ta lai du lieu:
+vis(dep_delay, carrier)
 
 
 # 4/ ANOVA mot nhan to:
