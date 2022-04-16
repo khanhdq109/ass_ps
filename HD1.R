@@ -1,9 +1,10 @@
 library("tidyverse")
 library("plyr")
 library("dplyr")
-library("moments")
 library("readr")
 library("rlist")
+library("nortest")
+library("car")
 
 
 # Mot so dinh nghia ham:
@@ -57,10 +58,32 @@ anova <- function(fact, value) {
   summary(analysis)
 }
 
+norm_check <- function(carrier, dep_delay, el) {
+  vor <- "Normal Q-Q Plot for"
+  temp <- c(vor, el)
+  nam <- paste(temp, collapse = " ")
+  idx <- which(carrier == el)
+  qqnorm(dep_delay[idx],
+         main = nam)
+  qqline(dep_delay[idx])
+  cat(el, "\n")
+  print(ad.test(dep_delay[idx]))
+}
+
+levene_check <- function(flights) {
+  result = leveneTest(dep_delay ~ as.factor(carrier), flights)
+  print(result)
+}
+
+regression <- function(flights) {
+  result <- lm(arr_delay ~ day + month + dep_time + arr_time + distance, flights)
+  summary(result)
+}
+
 # 1/ Doc du lieu:
 setwd("D:/Khanh/BK/HK212/XSTK/Code")
 load(file = "flights.rda")
-view(flights)
+# view(flights)
 
 
 # 2/ Lam sach du lieu:
@@ -110,8 +133,17 @@ vis(dep_delay, carrier)
 
 
 # 4/ ANOVA mot nhan to:
+# Kiem dinh phan phoi chuan:
+for (i in c(1:length(temp))) {
+  norm_check(carrier, dep_delay, temp[i])
+} 
+
+# Kiem dinh phuong sai:
+levene_check(flights)
+
+# ANOVA mot nhan to:
 anova(carrier, dep_delay)
 
 
 # 5/ Mo hinh hoi quy tuyen tinh:
-
+regression(flights)
